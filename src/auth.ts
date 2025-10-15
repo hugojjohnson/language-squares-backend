@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from "express"
 import SessionModel from "../schemas/Session"
-import { WebError } from "./utils"
+import { WebError } from "../scripts/utils"
 
 export async function verifySession(req: Request, res: Response, next: NextFunction) {
     if (req.query.token === undefined) {

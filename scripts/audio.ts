@@ -9,7 +9,7 @@ import { PassThrough } from 'stream';
 import { z } from "zod";
 import ffmpeg from "fluent-ffmpeg";
 const ffmpegPath = require('ffmpeg-static');
-import * as auth from "../scripts/auth"
+import * as auth from "../src/auth"
 import WordModel from "../schemas/Word";
 
 
@@ -17,112 +17,115 @@ const Q1 = z.object({ token: z.string() })
 const B1 = z.object({})
 export async function generateAudio(req: MyRequest<typeof Q1, typeof B1>, res: Response, next: NextFunction) {
     validateSchema(req, [Q1, B1])
-    const dS = (word: string) => ("public/audio/dS/" + word).replaceAll(" ", "\\ ")
-    const dW = (word: string) => ("public/audio/dW/" + word).replaceAll(" ", "\\ ")
-    const eS = (word: string) => ("public/audio/eS/" + word).replaceAll(" ", "\\ ")
-    const eW = (word: string) => ("public/audio/eW/" + word).replaceAll(" ", "\\ ")
+    const targetSentence = (word: string) => ("public/audio/targetSentence/" + word + ".mp3")
+    const targetWord = (word: string) => ("public/audio/targetWord/" + word + ".mp3")
+    const targetWordSlow = (word: string) => ("public/audio/targetWordSlow/" + word + ".mp3")
+    const targetSentenceSlow = (word: string) => ("public/audio/targetSentenceSlow/" + word + ".mp3")
+    const englishSentence = (word: string) => ("public/audio/englishSentence/" + word + ".mp3")
+    const englishWord = (word: string) => ("public/audio/englishWord/" + word + ".mp3")
 
-    const userId = await auth.tokenToUserId(req.query.token)
-    const unlearnedWords = (await WordModel.find({ owner: userId, learned: false }))
-    const learnedWords = (await WordModel.find({ owner: userId, learned: true }))
+    const userId = await auth.tokenToUserId(req.query.token);
+    const unlearnedWords = (await WordModel.find({ owner: userId, bucket: 0 }));
+    const learnedWords = (await WordModel.find({ owner: userId, bucket: { $gt: 0 } }));
 
-    const returnArr: string[] = []
-    const practiceArr: string[] = []
-    const numberOfWords = Math.min(12, unlearnedWords.length)
+    const returnArr: string[] = [];
 
-    for (let i = 0; i < numberOfWords; i++) {
-        learn(unlearnedWords[i].id)
-        unlearnedWords[i].learned = true
-        await unlearnedWords[i].save()
-        if (i % 3 === 2) {
-            returnArr.push(...practiceArr)
-            returnArr.push("public/beep.mp3")
-        }
-    }
+    // Number of new words to learn today
+    const numNewWords = Math.min(4, unlearnedWords.length);
+    const totalWords = 10; // Total number of words to practice today
+    // const learnTodayWords = unlearnedWords.slice(0, numNewWords);
 
-    // Also practice 5 learned words for every new word not introduced.
-    for (let i = 0; i < 5 * (12 - numberOfWords); i++) {
-        const randomWord = learnedWords[Math.floor(Math.random() * numberOfWords)].id
-        if (Math.random() > 0.75) {
-            returnArr.push(eS(randomWord))
-            returnArr.push("public/silent/7.mp3")
-            returnArr.push(dS(randomWord))
-            returnArr.push("public/silent/3.mp3")
-            returnArr.push(dW(randomWord))
-            returnArr.push("public/silent/3.mp3")
-        } else {
-            returnArr.push(eW(randomWord))
-            returnArr.push("public/silent/5.mp3")
-            returnArr.push(dW(randomWord))
-            returnArr.push("public/silent/3.mp3")
-            returnArr.push(dS(randomWord))
-            returnArr.push("public/silent/3.mp3")
-        }
-    }
-
-
-    // Practice each word an average of 2 times.
-    for (let i = 0; i < 2 * numberOfWords; i++) {
-        const randomWord = unlearnedWords[Math.floor(Math.random() * numberOfWords)].id
-        if (Math.random()> 0.75) {
-            returnArr.push(eS(randomWord))
-            returnArr.push("public/silent/7.mp3")
-            returnArr.push(dS(randomWord))
-            returnArr.push("public/silent/3.mp3")
-            returnArr.push(dW(randomWord))
-            returnArr.push("public/silent/3.mp3")
-        } else {
-            returnArr.push(eW(randomWord))
-            returnArr.push("public/silent/5.mp3")
-            returnArr.push(dW(randomWord))
-            returnArr.push("public/silent/3.mp3")
-            returnArr.push(dS(randomWord))
-            returnArr.push("public/silent/3.mp3")
-        }
-    }
-
-    function learn(newW: string) {
-        returnArr.push(eW(newW))
-        returnArr.push("public/silent/3.mp3")
-        returnArr.push(dW(newW))
-        returnArr.push("public/silent/7.mp3")
-        returnArr.push(dW(newW))
-        returnArr.push("public/silent/5.mp3")
-        returnArr.push(dS(newW))
-        returnArr.push("public/silent/7.mp3")
-        
-        practiceArr.push(eS(newW))
-        practiceArr.push("public/silent/7.mp3")
-        practiceArr.push(dS(newW))
-        practiceArr.push("public/silent/5.mp3")
-        practiceArr.push(dW(newW))
-        practiceArr.push("public/silent/3.mp3")
-    }
+    await learnNewWords();
+    returnArr.push("public/beep.mp3")
+    await practiceOldWords();
+    returnArr.push("public/beep.mp3")
+    reviewNewWords();
     returnArr.push("public/beep.mp3")
 
     await combine(returnArr, "scripts/out.mp3")
     return res.sendFile(__dirname + "/out.mp3")
-}
 
-async function duration(filePath: string): Promise<number> {
-    return new Promise((resolve, reject) => {
-        ffmpeg(filePath)
-            .ffprobe((err, data) => {
-                if (err) {
-                    return reject(err);
+
+    async function learnNewWords() {
+        for (let i = 0; i < numNewWords; i++) {
+            learnNewWord(unlearnedWords[i].id)
+            unlearnedWords[i].bucket += 1;
+            await unlearnedWords[i].save()
+        }
+    }
+    function learnNewWord(newW: string) {
+        returnArr.push(englishWord(newW))
+        returnArr.push("public/silent/2.mp3")
+        returnArr.push(targetWord(newW))
+        returnArr.push("public/silent/3.mp3")
+        returnArr.push(targetWordSlow(newW))
+        returnArr.push("public/silent/3.mp3")
+        returnArr.push(englishSentence(newW))
+        returnArr.push("public/silent/3.mp3")
+        returnArr.push(targetSentence(newW))
+        returnArr.push("public/silent/5.mp3")
+        returnArr.push(targetSentenceSlow(newW))
+        returnArr.push("public/silent/5.mp3")
+    }
+
+    async function practiceOldWords() {
+        if (learnedWords.length === 0) {
+            return;
+        }
+        for (let i = 0; i < (totalWords - numNewWords); i++) {
+            const randomWord = learnedWords[Math.floor(Math.random() * learnedWords.length)]
+            randomWord.bucket += 1;
+            await randomWord.save()
+            if (Math.random() > 0.75) {
+                returnArr.push(englishSentence(randomWord.id))
+                returnArr.push("public/silent/7.mp3")
+                returnArr.push(targetSentence(randomWord.id))
+                returnArr.push("public/silent/3.mp3")
+                if (Math.random() > 0.75) {
+                    returnArr.push(targetSentenceSlow(randomWord.id))
+                    returnArr.push("public/silent/3.mp3")
                 }
-                const duration = data.format.duration;
-                resolve(duration || 0);
-            });
-    });
+                returnArr.push(targetWord(randomWord.id))
+                returnArr.push("public/silent/3.mp3")
+            } else {
+                returnArr.push(englishWord(randomWord.id))
+                returnArr.push("public/silent/5.mp3")
+                returnArr.push(targetWord(randomWord.id))
+                returnArr.push("public/silent/3.mp3")
+                if (Math.random() > 0.8) {
+                    returnArr.push(targetWordSlow(randomWord.id))
+                    returnArr.push("public/silent/3.mp3")
+                }
+                returnArr.push(targetSentence(randomWord.id))
+                returnArr.push("public/silent/3.mp3")
+            }
+        }
+    }
+
+    function reviewNewWords() {
+        for (let i = 0; i < numNewWords; i++) {
+            const reviewWord = unlearnedWords[i].id;
+            returnArr.push(englishSentence(reviewWord));
+            returnArr.push("public/silent/7.mp3");
+            returnArr.push(targetSentence(reviewWord));
+            returnArr.push("public/silent/3.mp3");
+            returnArr.push(targetSentenceSlow(reviewWord));
+            returnArr.push("public/silent/3.mp3");
+        }
+    }
 }
 
-// async function combine(inputFiles: string[], outputFile: string) {
-//     const command = ffmpeg();
-//     inputFiles.forEach(file => {
-//         command.input(file);
+// async function duration(filePath: string): Promise<number> {
+//     return new Promise((resolve, reject) => {
+//         ffmpeg(filePath)
+//             .ffprobe((err, data) => {
+//                 if (err) {
+//                     return reject(err);
+//                 }
+//                 const duration = data.format.duration;
+//                 resolve(duration || 0);
+//             });
 //     });
-//     command.mergeToFile(outputFile, ".");
 // }
 
 async function combine(inputFiles: string[], outputFile: string) {

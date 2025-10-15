@@ -37,14 +37,10 @@ export function validateSchema(req: Request, [querySchema, bodySchema]: [z.ZodSc
         //     throw new WebError(err.errors, 400);
         // }
         console.debug("====================")
-        console.debug("====================")
-        console.debug("====================")
         console.debug("Query:")
         console.debug(req.query)
         console.debug("Body:")
         console.debug(req.body)
-        console.debug("====================")
-        console.debug("====================")
         console.debug("====================")
         throw new WebError("Request was not properly formed.", 400);
     }

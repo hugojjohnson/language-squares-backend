@@ -3,23 +3,25 @@ import { Schema, Document, model, ObjectId } from "mongoose";
 
 interface I extends Document {
     owner: ObjectId;
-    dW: string;
-    dS: string;
-    eW: string;
-    eS: string;
+    targetWord: string;
+    targetSentence: string;
+    targetPinyin: string;
+    englishWord: string;
+    englishSentence: string;
     id: string;
-    learned: boolean;
+    bucket: number;
     starred: boolean;
 }
 
 const S: Schema<I> = new Schema({
     owner: { type: Schema.Types.ObjectId, required: true },
-    dW: { type: String, required: true },
-    dS: { type: String, required: true },
-    eW: { type: String, required: true },
-    eS: { type: String, required: true },
+    targetWord: { type: String, required: true },
+    targetSentence: { type: String, required: true },
+    targetPinyin: { type: String, required: true },
+    englishWord: { type: String, required: true },
+    englishSentence: { type: String, required: true },
     id: { type: String, requered: true },
-    learned: { type: Boolean, required: true },
+    bucket: { type: Number, default: 0 },
     starred: { type: Boolean, required: true }
 })
 

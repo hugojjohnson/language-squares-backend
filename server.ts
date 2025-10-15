@@ -6,25 +6,28 @@ import * as mongoose from "mongoose";
 import 'dotenv/config';
 
 // User requires
-import * as auth from "./scripts/auth";
-import * as userAPI from "./scripts/userAPI";
+import * as auth from "./src/auth";
+import * as userAPI from "./src/userAPI";
 import * as audio from "./scripts/audio";
 import { WebError } from "./scripts/utils";
+import { DATABASE_URL } from "./types";
+import { setupFolders } from "./scripts/tts";
 
 interface WebErrorInterface extends Error {
     status?: number
 }
 
 try {
-    mongoose.connect(`mongodb+srv://${process.env.MGDB_USERNAME}:${process.env.MGDB_PASSWORD}@main.8e8t3.mongodb.net/${process.env.IS_COMPILED === "true" ? "main" : "development"}?retryWrites=true&w=majority&appName=main`).then(() => console.debug("Connected to MongoDB"))
+    mongoose.connect(DATABASE_URL).then(() => console.debug("Connected to MongoDB"))
 } catch (err) {
     console.error(err)
+    process.env.DATABASE_URL
 }
 
 const app: Application = express()
 
 const CURRENT_URL = process.env.CURRENT_URL || "*"
-const BASE_ROUTE = process.env.IS_COMPILED === "true" ? "" : "/danish-squares"
+const BASE_ROUTE = process.env.IS_COMPILED === "true" ? "" : "/language-squares"
 
 // ========== Set-up middleware (You can move this into a different file if you want to) ==========
 // If you want to send JSON, you need this middleware, which sents the Content-Type header.
@@ -64,11 +67,11 @@ app.get(BASE_ROUTE + "/users/sign-in/username", asyncHandler(userAPI.signInWithE
 
 // Users
 console.log(BASE_ROUTE)
-app.get(BASE_ROUTE + "/test", (req: Request, res: Response, next: NextFunction) => res.send("Welcome to Danish Squares!"));
+app.get(BASE_ROUTE + "/test", (req: Request, res: Response, next: NextFunction) => res.send("Welcome to Language Squares!"));
 
 app.get(BASE_ROUTE + "/auth/get-updates", asyncHandler(userAPI.updateUser))
 app.post(BASE_ROUTE + "/users/sign-out", asyncHandler(auth.verifySession), asyncHandler(userAPI.signOut))
-app.post(BASE_ROUTE + "/main/add-words", asyncHandler(auth.verifySession), asyncHandler(userAPI.addWord))
+app.post(BASE_ROUTE + "/main/add-words", asyncHandler(auth.verifySession), asyncHandler(userAPI.addWords))
 app.get(BASE_ROUTE + "/main/generate-audio", asyncHandler(auth.verifySession), asyncHandler(audio.generateAudio))
 app.get(BASE_ROUTE + "/star", asyncHandler(auth.verifySession), asyncHandler(userAPI.star))
 
@@ -87,6 +90,7 @@ app.use(function (err: WebErrorInterface | Error, req: Request, res: Response, n
     res.send(err.message)
 })
 
+setupFolders()
 const port = process.env.PORT || 3002
 app.listen(port)
 console.debug((process.env.IS_COMPILED ? "Compiled " : "") + "Server started on port " + port + "!")

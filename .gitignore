@@ -25,7 +25,8 @@ dist-ssr
 *.sw?
 
 public/audio/
-public/english/
-public/tracks/
 
 build/
+
+.env
+local/
