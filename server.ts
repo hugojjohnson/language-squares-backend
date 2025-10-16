@@ -8,6 +8,7 @@ import 'dotenv/config';
 // User requires
 import * as auth from "./src/auth";
 import * as userAPI from "./src/userAPI";
+import * as mainAPI from "./src/mainAPI";
 import * as audio from "./scripts/audio";
 import { WebError } from "./scripts/utils";
 import { DATABASE_URL, FRONTEND_URL, PORT } from "./env";
@@ -65,13 +66,14 @@ app.get(BASE_ROUTE + "/users/sign-in/username", asyncHandler(userAPI.signInWithE
 
 // Users
 console.log(BASE_ROUTE)
-app.get(BASE_ROUTE + "/test", (req: Request, res: Response, next: NextFunction) => res.send("Welcome to Language Squares - 4!"));
+app.get(BASE_ROUTE + "/test", (req: Request, res: Response, next: NextFunction) => res.send("Welcome to Language Squares!"));
 
 app.get(BASE_ROUTE + "/auth/get-updates", asyncHandler(userAPI.updateUser))
 app.post(BASE_ROUTE + "/users/sign-out", asyncHandler(auth.verifySession), asyncHandler(userAPI.signOut))
-app.post(BASE_ROUTE + "/main/add-words", asyncHandler(auth.verifySession), asyncHandler(userAPI.addWords))
+app.post(BASE_ROUTE + "/main/add-words", asyncHandler(auth.verifySession), asyncHandler(mainAPI.addWords))
 app.get(BASE_ROUTE + "/main/generate-audio", asyncHandler(auth.verifySession), asyncHandler(audio.generateAudio))
-app.get(BASE_ROUTE + "/star", asyncHandler(auth.verifySession), asyncHandler(userAPI.star))
+app.get(BASE_ROUTE + "/star", asyncHandler(auth.verifySession), asyncHandler(mainAPI.star))
+app.get(BASE_ROUTE + "/main/delete-word", asyncHandler(auth.verifySession), asyncHandler(mainAPI.deleteWord))
 
 // app.get(BASE_ROUTE + "/dev", asyncHandler(doStuff))
 
