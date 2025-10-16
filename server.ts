@@ -67,7 +67,7 @@ app.get(BASE_ROUTE + "/users/sign-in/username", asyncHandler(userAPI.signInWithE
 
 // Users
 console.log(BASE_ROUTE)
-app.get(BASE_ROUTE + "/test", (req: Request, res: Response, next: NextFunction) => res.send("Welcome to Language Squares - 3!"));
+app.get(BASE_ROUTE + "/test", (req: Request, res: Response, next: NextFunction) => res.send("Welcome to Language Squares - 4!"));
 
 app.get(BASE_ROUTE + "/auth/get-updates", asyncHandler(userAPI.updateUser))
 app.post(BASE_ROUTE + "/users/sign-out", asyncHandler(auth.verifySession), asyncHandler(userAPI.signOut))
