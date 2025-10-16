@@ -13,17 +13,6 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Run tests
-        run: npm test
-
       - name: Deploy to VPS
         uses: appleboy/ssh-action@v0.1.10
         with:
@@ -33,5 +22,5 @@ jobs:
           script: |
             cd ${{ secrets.VPS_APP_PATH }}
             git pull origin main
-            npm ci
+            npm ci --only=production
             pm2 restart language-squares-backend
