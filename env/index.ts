@@ -7,3 +7,4 @@ function getEnvVar(key: keyof NodeJS.ProcessEnv): string {
 
 export const PORT = parseInt(getEnvVar('PORT'), 10);
 export const DATABASE_URL = getEnvVar('DATABASE_URL');
+export const FRONTEND_URL = getEnvVar('FRONTEND_URL');

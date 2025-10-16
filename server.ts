@@ -10,7 +10,7 @@ import * as auth from "./src/auth";
 import * as userAPI from "./src/userAPI";
 import * as audio from "./scripts/audio";
 import { WebError } from "./scripts/utils";
-import { DATABASE_URL } from "./types";
+import { DATABASE_URL, FRONTEND_URL, PORT } from "./env";
 import { setupFolders } from "./scripts/tts";
 
 interface WebErrorInterface extends Error {
@@ -21,13 +21,11 @@ try {
     mongoose.connect(DATABASE_URL).then(() => console.debug("Connected to MongoDB"))
 } catch (err) {
     console.error(err)
-    process.env.DATABASE_URL
 }
 
 const app: Application = express()
 
-const CURRENT_URL = process.env.CURRENT_URL || "*"
-const BASE_ROUTE = process.env.IS_COMPILED === "true" ? "" : "/language-squares"
+const BASE_ROUTE = "/language-squares"
 
 // ========== Set-up middleware (You can move this into a different file if you want to) ==========
 // If you want to send JSON, you need this middleware, which sents the Content-Type header.
@@ -40,12 +38,12 @@ app.use(express.urlencoded({ extended: true })) // turn url parameters (e.g. ?na
 app.use(express.json()) // parse incoming data into json.
 var allowCrossDomain = function (req: Request, res: Response, next: NextFunction) {
     // Something called CORS I'm not sure what it is but we need this code here.
-    res.header('Access-Control-Allow-Origin', CURRENT_URL)
+    res.header('Access-Control-Allow-Origin', FRONTEND_URL)
     res.header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE')
     next()
 }
 app.use(allowCrossDomain)
-app.use(cors({ credentials: true, origin: CURRENT_URL }))
+app.use(cors({ credentials: true, origin: FRONTEND_URL }))
 app.use('/public', express.static('public')) // serve static files
 
 // An updated async route handler wrapper that allows you to specify the structure of the request.
@@ -91,6 +89,6 @@ app.use(function (err: WebErrorInterface | Error, req: Request, res: Response, n
 })
 
 setupFolders()
-const port = process.env.PORT || 3002
+const port = PORT
 app.listen(port)
-console.debug((process.env.IS_COMPILED ? "Compiled " : "") + "Server started on port " + port + "!")
+console.debug("Server started on port " + port + "!")
