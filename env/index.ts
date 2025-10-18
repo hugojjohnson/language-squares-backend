@@ -1,10 +1,19 @@
-// Gonna have to get used to modifying these things in two places :(
-function getEnvVar(key: keyof NodeJS.ProcessEnv): string {
-  const value = process.env[key];
-  if (!value) throw new Error(`Missing env var: ${key}`);
-  return value;
-}
+import { z } from 'zod';
 
-export const PORT = parseInt(getEnvVar('PORT'), 10);
-export const DATABASE_URL = getEnvVar('DATABASE_URL');
-export const FRONTEND_URL = getEnvVar('FRONTEND_URL');
+// Define your schema for env vars
+const envSchema = z.object({
+  PORT: z
+    .string()
+    .transform((val) => parseInt(val, 10))
+    .refine((val) => !isNaN(val), { message: 'PORT must be a number' }),
+  DATABASE_URL: z.string().url(),
+  FRONTEND_URL: z.string().url(),
+});
+
+// Parse process.env and throw if missing/invalid
+const env = envSchema.parse(process.env);
+
+// Now these are fully typed
+export const PORT: number = env.PORT;
+export const DATABASE_URL: string = env.DATABASE_URL;
+export const FRONTEND_URL: string = env.FRONTEND_URL;

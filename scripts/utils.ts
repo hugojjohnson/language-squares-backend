@@ -1,6 +1,7 @@
-import { Request, Response, NextFunction } from 'express';
-import Ffmpeg from 'fluent-ffmpeg';
+import { Request } from 'express';
 import { z } from 'zod';
+import * as fs from "fs"
+import { generateSpeech, makeRequest } from './tts';
 
 export class WebError extends Error {
     status: number;
@@ -44,6 +45,20 @@ export function validateSchema(req: Request, [querySchema, bodySchema]: [z.ZodSc
         console.debug("====================")
         throw new WebError("Request was not properly formed.", 400);
     }
+}
+
+
+// async function makeRequest(myPath: string, text: string, english: boolean, slow: boolean) {
+export async function createIfNotExists(myPath: string, text: string, wordId: string, english: boolean, slow: boolean): Promise<string> {
+    const finalPath = myPath + wordId + ".mp3";
+    if (!fs.existsSync(finalPath)) {
+        console.log("Making request to " + finalPath);
+        await makeRequest(finalPath, text, english, slow);
+    }
+    if (!fs.existsSync(finalPath)) {
+        throw new WebError("An error occurred while trying to create the sentence audio with tts.", 500);
+    }
+    return finalPath;
 }
 
 // // Generate silent audio files

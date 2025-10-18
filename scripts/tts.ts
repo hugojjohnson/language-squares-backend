@@ -23,19 +23,19 @@ export async function setupFolders() {
 
 export async function generateSpeech(targetWord: string, targetSentence: string, englishWord: string, englishSentence: string, id: string): Promise<void> {
     try {
-        await makeRequest("public/audio/targetWord/" + id, targetWord, false, false)
-        await makeRequest("public/audio/targetWordSlow/" + id, targetWord, false, true)
-        await makeRequest("public/audio/targetSentence/" + id, targetSentence, false, false)
-        await makeRequest("public/audio/targetSentenceSlow/" + id, targetSentence, false, true)
-        await makeRequest("public/audio/englishWord/" + id, englishWord, true, false)
-        await makeRequest("public/audio/englishSentence/" + id, englishSentence, true, false)
+        await makeRequest("public/audio/targetWord/" + id + ".mp3", targetWord, false, false);
+        await makeRequest("public/audio/targetWordSlow/" + id + ".mp3", targetWord, false, true);
+        await makeRequest("public/audio/targetSentence/" + id + ".mp3", targetSentence, false, false);
+        await makeRequest("public/audio/targetSentenceSlow/" + id + ".mp3", targetSentence, false, true);
+        await makeRequest("public/audio/englishWord/" + id + ".mp3", englishWord, true, false);
+        await makeRequest("public/audio/englishSentence/" + id + ".mp3", englishSentence, true, false);
     } catch (error) {
-        console.error('ERROR:', error)
-        throw new Error("Something happened.")
+        console.error('ERROR:', error);
+        throw new Error("An error occurred while generating speech.");
     }
 }
 
-async function makeRequest(myPath: string, text: string, english: boolean, slow: boolean) {
+export async function makeRequest(myPath: string, text: string, english: boolean, slow: boolean) {
     // There's too many, I can't choose!
     const voices = [
         "cmn-CN-Chirp3-HD-Achernar", "cmn-CN-Chirp3-HD-Achird", "cmn-CN-Chirp3-HD-Algenib",
@@ -77,7 +77,7 @@ async function makeRequest(myPath: string, text: string, english: boolean, slow:
     }
 
     if (response[0].audioContent) {
-        fs.writeFileSync(myPath + ".mp3", response[0].audioContent, 'binary')
+        fs.writeFileSync(myPath, response[0].audioContent, 'binary')
     } else {
         console.error("Error: Could not write audio content.")
     }
