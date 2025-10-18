@@ -8,6 +8,7 @@ const envSchema = z.object({
     .refine((val) => !isNaN(val), { message: 'PORT must be a number' }),
   DATABASE_URL: z.string().url(),
   FRONTEND_URL: z.string().url(),
+  GOOGLE_APPLICATION_CREDENTIALS: z.string() // NOT EXPORTED! Just for Google.
 });
 
 // Parse process.env and throw if missing/invalid
