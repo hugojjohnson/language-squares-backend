@@ -4,6 +4,7 @@ import { createIfNotExists, MyRequest, validateSchema, WebError } from "./utils"
 // @ts-ignore
 import audioconcat from 'audioconcat';
 import { spawn } from 'child_process';
+import fs from "fs";
 import path from 'path';
 import { PassThrough } from 'stream';
 import { z } from "zod";
@@ -43,8 +44,10 @@ export async function generateAudio(req: MyRequest<typeof Q1, typeof B1>, res: R
     returnArr.push("public/extra/youre-all-done.mp3");
     returnArr.push("public/extra/beep.mp3")
 
-    await combine(returnArr, "scripts/out.mp3")
-    return res.sendFile(__dirname + "/out.mp3")
+    const outPath = path.join(__dirname, "scripts/out.mp3");
+    fs.mkdirSync(path.dirname(outPath), { recursive: true });
+    await combine(returnArr, outPath);
+    return res.sendFile(outPath);
 
 
     async function learnNewWords() {
@@ -144,6 +147,6 @@ async function combine(inputFiles: string[], outputFile: string) {
         command
             .on('end', () => resolve())
             .on('error', (err) => reject(err))
-            .mergeToFile(outputFile, ".");
+            .mergeToFile(outputFile, path.dirname(outputFile));
     });
 }
