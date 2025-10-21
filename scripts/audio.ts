@@ -66,6 +66,7 @@ export async function generateAudio(req: MyRequest<typeof Q1, typeof B1>, res: R
             await unlearnedWords[i].save()
         }
     }
+    
     async function learnNewWord(newW: WordI) {
         returnArr.push(await englishWord(newW))
         returnArr.push("public/silent/2.mp3")
