@@ -97,3 +97,31 @@ async function tryDelete(path: string): Promise<void> {
     }
   }
 }
+
+
+const Q4 = z.object({
+    token: z.string(),
+    id: z.string()
+})
+const B4 = z.object({
+    newBucket: z.number()
+})
+export async function changeBucket(req: MyRequest<typeof Q4, typeof B4>, res: Response, next: NextFunction) {
+    validateSchema(req, [Q4, B4]);
+    const userId = await auth.tokenToUserId(req.query.token);
+    const myWord = await WordModel.findOne({ id: req.query.id });
+    if (myWord === null) {
+        throw new WebError("Word could not be found.", 500);
+    }
+    if (myWord.owner.toString() !== userId.toString()) {
+        console.log(myWord.owner)
+        console.log(userId)
+        throw new WebError("Word not owned by user.", 500)
+    }
+    if (req.body.newBucket < 0) {
+        throw new WebError("Bucket must be non-negative.", 400);
+    }
+    myWord.bucket = req.body.newBucket;
+    await myWord.save();
+    return res.json(myWord);
+}

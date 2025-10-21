@@ -15,9 +15,11 @@ import WordModel, { WordI } from "../schemas/Word";
 
 
 const Q1 = z.object({ token: z.string() })
-const B1 = z.object({})
+const B1 = z.object({
+    ids: z.array(z.string())
+})
 export async function generateAudio(req: MyRequest<typeof Q1, typeof B1>, res: Response, next: NextFunction) {
-    validateSchema(req, [Q1, B1])
+    validateSchema(req, [Q1, B1]);
     const targetSentence = async (word: WordI) => await createIfNotExists("public/audio/targetSentence/", word.targetSentence, word.id, false, false);
     const targetWord = async (word: WordI) => await createIfNotExists("public/audio/targetWord/", word.targetWord, word.id, false, false);
     const targetWordSlow = async (word: WordI) => await createIfNotExists("public/audio/targetWordSlow/", word.targetWord, word.id, false, true);
@@ -25,14 +27,17 @@ export async function generateAudio(req: MyRequest<typeof Q1, typeof B1>, res: R
     const englishSentence = async (word: WordI) => await createIfNotExists("public/audio/englishSentence/", word.englishSentence, word.id, true, false);
     const englishWord = async (word: WordI) => await createIfNotExists("public/audio/englishWord/", word.englishWord, word.id, true, false);
 
+    if (req.body.ids.length === 0) {
+        throw new WebError("At least one ID must be selected", 400);
+    }
     const userId = await auth.tokenToUserId(req.query.token);
-    const unlearnedWords: WordI[] = (await WordModel.find({ owner: userId, bucket: 0 }));
+    const unlearnedWords: WordI[] = (await WordModel.find({ owner: userId, id: { $in: req.body.ids } }));
     const learnedWords: WordI[] = (await WordModel.find({ owner: userId, bucket: { $gt: 0 } }));
 
     const returnArr: string[] = [];
 
     // Number of new words to learn today
-    const numNewWords = Math.min(4, unlearnedWords.length);
+    const numNewWords = unlearnedWords.length;
     const totalWords = 10; // Total number of words to practice today
     // const learnTodayWords = unlearnedWords.slice(0, numNewWords);
 
@@ -72,7 +77,7 @@ export async function generateAudio(req: MyRequest<typeof Q1, typeof B1>, res: R
         returnArr.push(await targetSentence(newW))
         returnArr.push("public/silent/5.mp3")
         returnArr.push(await targetSentenceSlow(newW))
-        returnArr.push("public/silent/5.mp3")
+        returnArr.push("public/silent/3.mp3")
     }
 
     async function practiceOldWords() {
@@ -84,9 +89,9 @@ export async function generateAudio(req: MyRequest<typeof Q1, typeof B1>, res: R
             const randomWord = learnedWords[Math.floor(Math.random() * learnedWords.length)]
             randomWord.bucket += 1;
             await randomWord.save()
-            if (Math.random() > 0.75) {
+            if (Math.random() > 0.33) {
                 returnArr.push(await englishSentence(randomWord))
-                returnArr.push("public/silent/7.mp3")
+                returnArr.push("public/silent/5.mp3")
                 returnArr.push(await targetSentence(randomWord))
                 returnArr.push("public/silent/3.mp3")
                 if (Math.random() > 0.75) {
@@ -114,7 +119,7 @@ export async function generateAudio(req: MyRequest<typeof Q1, typeof B1>, res: R
         for (let i = 0; i < numNewWords; i++) {
             const reviewWord = unlearnedWords[i];
             returnArr.push(await englishSentence(reviewWord));
-            returnArr.push("public/silent/7.mp3");
+            returnArr.push("public/silent/5.mp3");
             returnArr.push(await targetSentence(reviewWord));
             returnArr.push("public/silent/3.mp3");
             returnArr.push(await targetSentenceSlow(reviewWord));

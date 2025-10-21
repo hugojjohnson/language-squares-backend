@@ -71,9 +71,10 @@ app.get(BASE_ROUTE + "/test", (req: Request, res: Response, next: NextFunction) 
 app.get(BASE_ROUTE + "/auth/get-updates", asyncHandler(userAPI.updateUser))
 app.post(BASE_ROUTE + "/users/sign-out", asyncHandler(auth.verifySession), asyncHandler(userAPI.signOut))
 app.post(BASE_ROUTE + "/main/add-words", asyncHandler(auth.verifySession), asyncHandler(mainAPI.addWords))
-app.get(BASE_ROUTE + "/main/generate-audio", asyncHandler(auth.verifySession), asyncHandler(audio.generateAudio))
+app.post(BASE_ROUTE + "/main/generate-audio", asyncHandler(auth.verifySession), asyncHandler(audio.generateAudio))
 app.get(BASE_ROUTE + "/star", asyncHandler(auth.verifySession), asyncHandler(mainAPI.star))
 app.get(BASE_ROUTE + "/main/delete-word", asyncHandler(auth.verifySession), asyncHandler(mainAPI.deleteWord))
+app.post(BASE_ROUTE + "/main/change-bucket", asyncHandler(auth.verifySession), asyncHandler(mainAPI.changeBucket))
 
 // app.get(BASE_ROUTE + "/dev", asyncHandler(doStuff))
 
