@@ -33,6 +33,7 @@ export async function generateAudio(req: MyRequest<typeof Q1, typeof B1>, res: R
     const userId = await auth.tokenToUserId(req.query.token);
     const unlearnedWords: WordI[] = (await WordModel.find({ owner: userId, id: { $in: req.body.ids } }));
     const learnedWords: WordI[] = (await WordModel.find({ owner: userId, bucket: { $gt: 0 } }));
+    var learnedWordsSet: Set<string> = new Set<string>();
 
     const returnArr: string[] = [];
 
@@ -87,8 +88,11 @@ export async function generateAudio(req: MyRequest<typeof Q1, typeof B1>, res: R
         }
         for (let i = 0; i < (totalWords - numNewWords); i++) {
             const randomWord = learnedWords[Math.floor(Math.random() * learnedWords.length)]
-            randomWord.bucket += 1;
-            await randomWord.save()
+            if (!learnedWordsSet.has(randomWord.id)) {
+                learnedWordsSet.add(randomWord.id);
+                randomWord.bucket += 1;
+                await randomWord.save();
+            }
             if (Math.random() > 0.33) {
                 returnArr.push(await englishSentence(randomWord))
                 returnArr.push("public/silent/5.mp3")
