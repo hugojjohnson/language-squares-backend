@@ -40,7 +40,6 @@ export async function generateAudio(req: MyRequest<typeof Q1, typeof B1>, res: R
     // Number of new words to learn today
     const numNewWords = unlearnedWords.length;
     const totalWords = 10; // Total number of words to practice today
-    // const learnTodayWords = unlearnedWords.slice(0, numNewWords);
 
     await learnNewWords();
     returnArr.push("public/extra/beep.mp3")
@@ -66,7 +65,7 @@ export async function generateAudio(req: MyRequest<typeof Q1, typeof B1>, res: R
             await unlearnedWords[i].save()
         }
     }
-    
+
     async function learnNewWord(newW: WordI) {
         returnArr.push(await englishWord(newW))
         returnArr.push("public/silent/2.mp3")
